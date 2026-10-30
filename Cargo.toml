@@ -1,0 +1,36 @@
+[package]
+name = "clicmd"
+description = "Some utilities for CLI development."
+version = "0.1.0"
+edition = "2024"
+authors = ["Simon Johnston <johnstonskj@gmail.com"]
+repository = "https://github.com/johnstonskj/clicmd"
+homepage = "https://simonkjohnston.life/clicmd"
+license = "MIT OR Apache-2.0"
+keywords = ["cli"]
+readme = "README.md"
+publish = true
+
+[features]
+default = ["color", "completion", "external", "messages", "verbosity"]
+color = []
+completion = ["clap_complete"]
+external = []
+messages = ["color", "strum"]
+verbosity = []
+
+[dependencies]
+clap = { version = "4.6", features = ["derive", "env"] }
+clap_complete = { version = "4.6", optional = true }
+clap-verbosity-flag = { version = "3", default-features = false, features = [
+    "tracing",
+] }
+colorchoice = { version = "1.0" }
+colorchoice-clap = { version = "1.0" }
+colored = { version = "3.1" }
+document-features = "0.2"
+search_path = "0.1"
+thiserror = { version = "2.0", default-features = false }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+strum = { version = "0.28", features = ["derive"], optional = true }

@@ -1,0 +1,119 @@
+[tools]
+rust = { version = "latest", components = [
+    "rust-src",
+    "clippy-preview",
+], mr_boxington = true }
+
+mr-boxington = "latest"
+watchexec = "latest"
+"cargo:bacon" = "latest"
+#"cargo:cargo-edit" = "latest"
+
+[env]
+VERBOSE_ARGS = "--verbose"
+COLOR_ARGS = "--color always"
+
+[tasks."lint:check"]
+description = "Check the code for any linting issues using cargo check"
+alias = "check"
+run = "cargo check ${VERBOSE_ARGS} ${COLOR_ARGS} --all-targets --future-incompat-report --workspace"
+
+[tasks."lint:clippy"]
+description = "Check the code for any linting issues using cargo clippy"
+alias = "clippy"
+run = "cargo clippy ${VERBOSE_ARGS} ${COLOR_ARGS} --no-deps --all-targets"
+
+[tasks."lint:format"]
+description = "Format the code using cargo fmt"
+alias = "fmt"
+run = "cargo fmt ${VERBOSE_ARGS} --all"
+
+[tasks."lint"]
+description = "Run all linting tasks"
+alias = "lint"
+run = { tasks = ["lint:check", "lint:clippy", "lint:format"] }
+
+[tasks."lint:format:check"]
+description = "Check if the code is properly formatted using cargo fmt"
+alias = "fmt-check"
+run = "cargo fmt ${VERBOSE_ARGS} --all --check"
+
+[tasks."build"]
+description = "Build the project using cargo build"
+depends = ["lint:format", "lint:check", "lint:clippy"]
+run = "cargo build ${VERBOSE_ARGS} ${COLOR_ARGS}"
+
+[tasks."miri"]
+description = "Run the project using cargo miri"
+tools.rust = { version = "nightly", components = ["miri"], mr_boxington = true }
+run = "cargo +nightly miri run ${VERBOSE_ARGS} ${COLOR_ARGS}"
+
+[tasks."clean"]
+description = "Clean the project using cargo clean"
+run = "cargo clean ${VERBOSE_ARGS} ${COLOR_ARGS}"
+
+[tasks."meta-check"]
+description = "Check the project's metadata"
+run = "cargo metadata ${VERBOSE_ARGS} ${COLOR_ARGS} --no-deps --format-version 1"
+
+[tasks."deps:audit"]
+description = "Audit the project's dependencies for security issues using cargo audit"
+tools."cargo:cargo-audit" = "latest"
+alias = "audit"
+sources = ["Cargo.toml"]
+run = "cargo audit ${VERBOSE_ARGS} ${COLOR_ARGS} --file {{config_root | quote}}/Cargo.lock"
+
+[tasks."deps:outdated"]
+description = "Check for outdated dependencies using cargo outdated"
+tools."cargo:cargo-outdated" = "latest"
+alias = "outdated"
+sources = ["Cargo.toml"]
+run = "cargo outdated ${VERBOSE_ARGS} ${COLOR_ARGS} --workspace --root-deps-only"
+
+[tasks."test:nextest"]
+description = "Run tests using cargo nextest"
+depends = ["build"]
+tools."cargo:cargo-nextest" = "latest"
+alias = "nt"
+run = "cargo nextest run ${VERBOSE_ARGS} ${COLOR_ARGS} --all-targets"
+
+[tasks."test:test"]
+description = "Run all tests using cargo test"
+depends = ["build"]
+alias = "test"
+run = "cargo test ${VERBOSE_ARGS} ${COLOR_ARGS} --all-targets"
+
+[tasks."test:coverage"]
+description = "Run all tests, with coverage, using cargo tarpaulin"
+depends = ["build"]
+tools."cargo:cargo-tarpaulin" = "latest"
+alias = "coverage"
+run = "cargo tarpaulin ${VERBOSE_ARGS} ${COLOR_ARGS} --all-targets --command test"
+
+[tasks."test:flamegraph"]
+description = "Generate a flamegraph for the tests using cargo flamegraph"
+depends = ["build"]
+tools."cargo:flamegraph" = "latest"
+run = "cargo flamegraph ${VERBOSE_ARGS} ${COLOR_ARGS}"
+
+[tasks."readme:lint"]
+description = "Lint all the README.md files in the project using markdownlint-cli2"
+tools.markdownlint-cli2 = "latest"
+run = "markdownlint-cli2 \"**/README.md\""
+
+[tasks."docs:lint"]
+description = "Lint all the documentation files, in 'doc/', using markdownlint-cli2"
+tools.markdownlint-cli2 = "latest"
+run = [{ task = "readme:lint" }, "markdownlint-cli2 \"docs/**/*.md\""]
+
+[tasks."doc"]
+description = "Generate rustdoc for the project using cargo doc"
+run = "cargo doc ${VERBOSE_ARGS} ${COLOR_ARGS} --no-deps"
+
+[tasks."rustdoc"]
+description = "Generate rustdoc for the project, using cargo rustdoc"
+run = "cargo rustdoc ${VERBOSE_ARGS} ${COLOR_ARGS} --lib"
+
+[tasks."pre-commit"]
+description = "Run all tasks that should be executed before committing code"
+run = { tasks = ["lint", "deps:audit", "deps:outdated", "test:test"] }
