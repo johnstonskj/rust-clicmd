@@ -1,6 +1,6 @@
 [package]
 name = "clicmd"
-description = "Some utilities for CLI development."
+description = "This crate provides some composable components for command-line applications."
 version = "0.1.0"
 edition = "2024"
 authors = ["Simon Johnston <johnstonskj@gmail.com"]
