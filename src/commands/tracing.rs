@@ -39,7 +39,7 @@ impl Command for LevelFilter {
             )
             .init();
 
-        tracing::info!("Telemetry initialized with level filter: {:?}", self);
+        tracing::info!("tracing initialized with level filter: {:?}", self);
 
         Ok(ExitCode::SUCCESS)
     }

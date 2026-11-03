@@ -91,7 +91,7 @@ impl Display for Message {
                     "   ├──"
                 },
                 format!(
-                    "{}  {} {}",
+                    "{}  {}: {}",
                     match note.kind {
                         NoteKind::Help => "ℹ️",
                         NoteKind::Note => "🗒️",

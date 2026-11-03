@@ -95,7 +95,7 @@ where
             "CliWithSubCommands::execute(verbosity: {:?}, color: {:?})",
             self.verbosity, self.color
         );
-        self.verbosity.to_tracing_filter().execute()?;
+        self.verbosity.execute()?;
         self.color.execute();
         self.command.execute()
     }
@@ -159,6 +159,7 @@ impl Command for Verbosity {
         } else if !set_quiet_count(self.quiet) {
             Err(CliError::InitGlobalFailed("quiet-count"))
         } else {
+            self.to_tracing_filter().execute()?;
             Ok(ExitCode::SUCCESS)
         }
     }

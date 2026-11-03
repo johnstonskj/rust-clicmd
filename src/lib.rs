@@ -14,7 +14,6 @@
 //! # Feature flags
 #![doc = document_features::document_features!()]
 
-use clap::Parser;
 use colorchoice::ColorChoice;
 use std::{error::Error, process::ExitCode, sync::OnceLock};
 
@@ -43,9 +42,9 @@ macro_rules! execute {
         }
     };
     ($cmd:expr $(, $then:expr )+ ) => {{
-        let _ = $cmd.execute();
+        execute!($cmd);
         $(
-            let _ = $then.execute();
+            execute!($then);
         )+
         ::std::process::ExitCode::SUCCESS
     }};
@@ -89,7 +88,7 @@ static QUIET_COUNT: OnceLock<u8> = OnceLock::new();
 // ------------------------------------------------------------------------------------------------
 
 pub fn get_verbose_count() -> u8 {
-    *VERBOSE_COUNT.get().unwrap()
+    *VERBOSE_COUNT.get().unwrap_or(&0)
 }
 
 pub(crate) fn set_quiet_count(count: u8) -> bool {
@@ -97,7 +96,7 @@ pub(crate) fn set_quiet_count(count: u8) -> bool {
 }
 
 pub fn get_quiet_count() -> u8 {
-    *QUIET_COUNT.get().unwrap()
+    *QUIET_COUNT.get().unwrap_or(&0)
 }
 
 pub(crate) fn set_verbose_count(count: u8) -> bool {
@@ -110,7 +109,7 @@ pub fn get_color_choice() -> ColorChoice {
 
 pub fn cli_main<C>() -> ExitCode
 where
-    C: Parser + Command<Output = ExitCode>,
+    C: clap::Parser + Command<Output = ExitCode>,
 {
     execute!(C::parse())
 }
