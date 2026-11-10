@@ -3,7 +3,6 @@ name = "clicmd"
 description = "This crate provides some composable components for command-line applications."
 version = "0.1.1"
 edition = "2024"
-authors = ["Simon Johnston <johnstonskj@gmail.com"]
 repository = "https://github.com/johnstonskj/clicmd"
 homepage = "https://simonkjohnston.life/clicmd"
 license = "MIT OR Apache-2.0"
@@ -13,10 +12,20 @@ publish = true
 
 [features]
 default = ["color", "completion", "external", "messages", "verbosity"]
+
+## Add color support
 color = []
+
+## Add support for generation of shell completion scripts.
 completion = ["clap_complete"]
+
+## Add external command support such as that provided by `cargo` or `git`.
 external = []
+
+## Support for human-facing error messages.
 messages = ["color", "strum"]
+
+## Support for verbosity flags and tracing initialization.
 verbosity = []
 
 [dependencies]

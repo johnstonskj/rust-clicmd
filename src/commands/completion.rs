@@ -16,20 +16,21 @@ use tracing::{info, trace};
 ///
 /// Generate command completions for a number of shells.
 ///
+/// # Example
+/// 
 /// ```rust
 /// use clap::Subcommand;
-/// use clicmd::CompletionSubCommand;
+/// use clicmd::commands::completion::CompletionSubCommand;
 ///
 /// #[derive(Debug, Subcommand)]
 /// pub enum Commands {
 ///     // ...
 ///
-///     #[command(flatten)]
 ///     Completions(CompletionSubCommand),
 /// }
 /// ```
+/// 
 #[derive(Debug, Args)]
-#[cfg(feature = "completion")]
 pub struct CompletionSubCommand {
     /// Shell to generate completions for (defaults to $SHELL).
     shell: Option<Shell>,
@@ -40,7 +41,7 @@ pub struct CompletionSubCommand {
 // ------------------------------------------------------------------------------------------------
 
 ///
-/// The command type `CompletionSubCommand` does not implement [`Command`] or [`CommandWith`], as usual
+/// The command type `CompletionSubCommand` does not implement `Command` or `CommandWith`, as usual
 /// due to type constraints with the parameter `C: CommandFactory`. Instead, this function takes a
 /// reference to `CompletionSubCommand` and a type implementing `CommandFactory`, and so mimics the
 /// method on `CommandWith` to keep client code relatively consistent.

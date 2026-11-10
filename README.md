@@ -5,8 +5,8 @@ This crate provides some composable components for command-line applications.
 <!-- markdownlint-disable MD013 -->
 [![Apache-2.0 License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![MIT License](https://img.shields.io/badge/license-mit-118811.svg)](https://opensource.org/license/mit)
-[![crates.io](https://img.shields.io/crates/v/rust-clicmd.svg)](https://crates.io/crates/rust-clicmd)
-[![docs.rs](https://docs.rs/rust-clicmd/badge.svg)](https://docs.rs/rust-clicmd)
+[![crates.io](https://img.shields.io/crates/v/clicmd.svg)](https://crates.io/crates/clicmd)
+[![docs.rs](https://docs.rs/clicmd/badge.svg)](https://docs.rs/clicmd)
 [![GitHub stars](https://img.shields.io/github/stars/johnstonskj/rust-clicmd.svg)](<https://github.com/johnstonskj/rust-clicmd/stargazers>)
 <!-- markdownlint-enable MD013 -->
 

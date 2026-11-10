@@ -6,7 +6,13 @@
 //! which are then composed into initialization, command-dispatch, and cleanup, rather than being
 //! tightly coupled to the CLI structure.
 //!
-//! You will notice that some features such as `color` and `telemetry` are optional and yet the
+//! # Usage
+//! 
+//! TBD
+//! 
+//! # Notes
+//! 
+//! You will notice that some features such as `color` are optional and yet some aspects of the
 //! associated components are still usable and composable within the application. This allows the
 //! default behavior of the application to remain consistent regardless of which optional features,
 //! and by implication exposed command-line options, are enabled.
@@ -21,6 +27,25 @@ use std::{error::Error, process::ExitCode, sync::OnceLock};
 // Public Macros
 // ------------------------------------------------------------------------------------------------
 
+///
+/// This macro wraps calls to commands, handling their execution and error reporting. It specifically
+/// supports `Command`, `CommandWith`, and sequences of `Command` executions.
+/// 
+/// # Syntax
+/// 
+/// ```bnf
+/// execute ::= "execute!" "("
+///     ( command | command_with | command_sequence )
+/// ")"
+/// 
+/// command ::= expr
+/// command_with ::= command_name "(" argument ")"
+/// command_sequence ::= command ( "," command )+
+/// 
+/// command_name ::= ident
+/// argument ::= expr
+/// ```
+/// 
 #[macro_export]
 macro_rules! execute {
     ($cmd:expr) => {
@@ -77,7 +102,7 @@ pub trait CommandWith {
 pub type CliResult<E> = Result<ExitCode, E>;
 
 // ------------------------------------------------------------------------------------------------
-// Globals
+// Private Globals
 // ------------------------------------------------------------------------------------------------
 
 static VERBOSE_COUNT: OnceLock<u8> = OnceLock::new();
@@ -107,24 +132,71 @@ pub fn get_color_choice() -> ColorChoice {
     colorchoice::ColorChoice::global()
 }
 
+///
+/// TBD
+/// 
+/// Note, the call to `C::execute` uses the macro `execute!` , and the error handling it provides.
+/// 
+/// # Example Single Command CLI
+/// 
+/// ```rust
+/// use clap::{Parser, ValueEnum};
+/// use clicmd::{Command, commands::Verbosity, error::CliError, cli_main};
+/// use colorchoice_clap::Color;
+/// use std::process::ExitCode;
+/// 
+/// #[derive(Debug, Parser)]
+/// #[command(version, about, long_about = None)] // Read from `Cargo.toml`
+/// pub struct Cli {
+///     #[command(flatten)]
+///     verbosity: Verbosity,
+/// 
+///     #[command(flatten)]
+///     color: Color,
+/// 
+///     message: Option<String>,
+/// }
+/// 
+/// impl Command for Cli {
+///     type Output = ExitCode;
+///     type Error = CliError;
+///
+///     fn execute(self) -> Result<Self::Output, Self::Error> {
+///         println!(
+///             "Message: {:?}", 
+///             self.message
+///                 .unwrap_or_else(|| "Hello world".into())
+///         );
+///         Ok(ExitCode::SUCCESS)
+///     }
+/// }
+/// 
+/// fn main() -> ExitCode {
+///     cli_main::<Cli>()
+/// }
+/// ``` 
+/// 
+/// See `examples/single/src/main.rs` for a complete example.
+/// 
+/// # Example Multi Command CLI
+/// 
+/// ```rust,ignore
+/// use clicmd::cli_main;
+/// use std::process::ExitCode;
+/// 
+/// fn main() -> ExitCode {
+///     cli_main::<Cli>()
+/// }
+/// ```
+/// 
+/// See `examples/multi/src/main.rs` for a complete example.
+/// 
 pub fn cli_main<C>() -> ExitCode
 where
     C: clap::Parser + Command<Output = ExitCode>,
 {
     execute!(C::parse())
 }
-
-// ------------------------------------------------------------------------------------------------
-// Private Types
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// Implementations
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// Private Functions
-// ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // Modules
@@ -136,10 +208,3 @@ pub mod error;
 
 #[cfg(feature = "messages")]
 pub mod messages;
-
-// ------------------------------------------------------------------------------------------------
-// Unit Tests
-// ------------------------------------------------------------------------------------------------
-
-#[cfg(test)]
-mod tests {}

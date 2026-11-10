@@ -6,8 +6,8 @@
 //!   - [Verbosity]: A structure for handling verbose and quiet flags.
 //! - [`ExternalSubCommand`](crate::commands::external::ExternalSubCommand): A sub-command that can
 //!   be executed as a child process by the main CLI.
-//! - [`Completion`](crate::commands::completion::Completion): A sub-command that handles shell
-//!   completion for the CLI.
+//! - [`Completion`](crate::commands::completion::CompletionSubCommand): A sub-command that handles
+//!   shell completion for the CLI.
 //!
 //!
 
@@ -20,10 +20,6 @@ use clap::{ArgAction, Args, Parser, Subcommand};
 use colorchoice_clap::Color;
 use std::{fmt::Debug, process::ExitCode};
 use tracing_subscriber::filter::LevelFilter;
-
-// ------------------------------------------------------------------------------------------------
-// Public Macros
-// ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // Public Types
@@ -70,14 +66,6 @@ pub struct Verbosity {
     #[cfg(feature = "verbosity")]
     quiet: u8,
 }
-
-// ------------------------------------------------------------------------------------------------
-// Public Functions
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// Private Types
-// ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // Implementations ❯ CliWithSubCommands

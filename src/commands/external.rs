@@ -9,6 +9,17 @@
 //! it to be executed directly or with a specified prefix. The intent of the prefix is to support
 //! the convention where sub-command binary names are composed of the primary command name followed
 //! by a hyphen and the sub-command name.
+//! 
+//! # Examples
+//! 
+//! ```rust
+//! use clicmd::{Command, commands::external::ExternalSubCommand}; 
+//! 
+//! let cmd = ExternalSubCommand {
+//!     args: vec!["ls".into()],
+//! };
+//! cmd.execute().unwrap();
+//! ```
 //!
 
 use crate::{
@@ -17,7 +28,6 @@ use crate::{
     get_color_choice, get_quiet_count, get_verbose_count,
     messages::{Message, Note},
 };
-use clap::Args;
 use colorchoice::ColorChoice;
 use search_path::SearchPath;
 use std::{
@@ -25,28 +35,39 @@ use std::{
     process::{Command as OsCommand, ExitCode},
 };
 use tracing::{error, info};
+use clap::Args;
 
 // ------------------------------------------------------------------------------------------------
 // Public Types
 // ------------------------------------------------------------------------------------------------
 
-//
-// ```rust
-// use clap::Subcommand;
-// use clicmd::ExternalSubCommand;
-//
-// #[derive(Debug, Subcommand)]
-// pub enum Commands {
-//     // ...
-//
-//     #[command(flatten, external_subcommand)]
-//     External(ExternalSubCommand),
-// }
+///
+/// External sub-command handling for commands not natively supported by the CLI.
+/// 
+/// The array of values **must** contain at least one element, representing the external sub-command
+/// executable name to run, all other values are arguments to that executable.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use clap::Subcommand;
+/// use clicmd::commands::external::ExternalSubCommand;
+///
+/// #[derive(Debug, Subcommand)]
+/// #[command(allow_external_subcommands = true)]
+/// pub enum Commands {
+///     // ...
+///
+///     External(
+///         ExternalSubCommand
+///     ),
+/// }
+/// ```
+/// 
 #[derive(Debug, Args)]
-#[cfg(feature = "external")]
 pub struct ExternalSubCommand {
     #[arg(num_args = 1..)]
-    args: Vec<String>,
+    pub args: Vec<String>,
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -156,10 +177,3 @@ fn sub_process_error<P: AsRef<Path>, E: std::error::Error>(path: P, error: E) ->
         .with_context(format!("Executable path `{:?}`", path.as_ref()))
         .with_note(Note::note(format!("reported error: {error}")))
 }
-
-// ------------------------------------------------------------------------------------------------
-// Unit Tests
-// ------------------------------------------------------------------------------------------------
-
-#[cfg(test)]
-mod tests {}
