@@ -46,8 +46,8 @@ strum = { version = "0.28", features = ["derive"], optional = true }
 
 [[example]]
 name = "single"
-path = "examples/single/src/main.rs"
+path = "examples/single/main.rs"
 
 [[example]]
 name = "multi"
-path = "examples/multi/src/main.rs"
+path = "examples/multi/main.rs"

@@ -12,21 +12,21 @@
 //!
 #![doc = concat!(
     "```rust\n",
-    include_str!("../examples/single/src/main.rs"),
+    include_str!("../examples/single/main.rs"),
     "\n```"
 )]
 //!
-//! See `examples/single/src/main.rs` for this complete example.
+//! See `examples/single/main.rs` for this complete example.
 //!
 //! ## Example Multi Command CLI
 //!
 #![doc = concat!(
     "```rust\n",
-    include_str!("../examples/multi/src/main.rs"),
+    include_str!("../examples/multi/main.rs"),
     "\n```"
 )]
 //!
-//! See `examples/multi/src/main.rs` for this complete example.
+//! See `examples/multi/main.rs` for this complete example.
 //!
 //! # Notes
 //!
