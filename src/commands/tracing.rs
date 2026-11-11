@@ -7,7 +7,10 @@
 
 use crate::Command;
 use std::process::ExitCode;
-use tracing_subscriber::filter::{EnvFilter, FromEnvError, LevelFilter};
+use tracing_subscriber::filter::{EnvFilter, FromEnvError};
+
+// re-export as this is our Command type.
+pub use tracing_subscriber::filter::LevelFilter;
 
 // ------------------------------------------------------------------------------------------------
 // Public Functions

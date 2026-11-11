@@ -17,7 +17,7 @@ use tracing::{info, trace};
 /// Generate command completions for a number of shells.
 ///
 /// # Example
-/// 
+///
 /// ```rust
 /// use clap::Subcommand;
 /// use clicmd::commands::completion::CompletionSubCommand;
@@ -29,7 +29,7 @@ use tracing::{info, trace};
 ///     Completions(CompletionSubCommand),
 /// }
 /// ```
-/// 
+///
 #[derive(Debug, Args)]
 pub struct CompletionSubCommand {
     /// Shell to generate completions for (defaults to $SHELL).

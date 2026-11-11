@@ -7,11 +7,29 @@
 //! tightly coupled to the CLI structure.
 //!
 //! # Usage
-//! 
-//! TBD
-//! 
+//!
+//! ## Example Single Command CLI
+//!
+#![doc = concat!(
+    "```rust\n",
+    include_str!("../examples/single/src/main.rs"),
+    "\n```"
+)]
+//!
+//! See `examples/single/src/main.rs` for this complete example.
+//!
+//! ## Example Multi Command CLI
+//!
+#![doc = concat!(
+    "```rust\n",
+    include_str!("../examples/multi/src/main.rs"),
+    "\n```"
+)]
+//!
+//! See `examples/multi/src/main.rs` for this complete example.
+//!
 //! # Notes
-//! 
+//!
 //! You will notice that some features such as `color` are optional and yet some aspects of the
 //! associated components are still usable and composable within the application. This allows the
 //! default behavior of the application to remain consistent regardless of which optional features,
@@ -30,22 +48,22 @@ use std::{error::Error, process::ExitCode, sync::OnceLock};
 ///
 /// This macro wraps calls to commands, handling their execution and error reporting. It specifically
 /// supports `Command`, `CommandWith`, and sequences of `Command` executions.
-/// 
+///
 /// # Syntax
-/// 
+///
 /// ```bnf
 /// execute ::= "execute!" "("
 ///     ( command | command_with | command_sequence )
 /// ")"
-/// 
+///
 /// command ::= expr
 /// command_with ::= command_name "(" argument ")"
 /// command_sequence ::= command ( "," command )+
-/// 
+///
 /// command_name ::= ident
 /// argument ::= expr
 /// ```
-/// 
+///
 #[macro_export]
 macro_rules! execute {
     ($cmd:expr) => {
@@ -79,6 +97,9 @@ macro_rules! execute {
 // Public Types
 // ------------------------------------------------------------------------------------------------
 
+///
+/// A trait representing a command that can be executed once only, without additional arguments.
+/// 
 pub trait Command {
     /// The type returned on successful execution.
     type Output;
@@ -89,6 +110,9 @@ pub trait Command {
     fn execute(self) -> Result<Self::Output, Self::Error>;
 }
 
+///
+/// A trait representing a command that can be executed once only, with a single argument.
+/// 
 pub trait CommandWith {
     /// The type returned on successful execution.
     type Output;
@@ -99,6 +123,10 @@ pub trait CommandWith {
     fn execute_with(self, value: Self::Value) -> Result<Self::Output, Self::Error>;
 }
 
+///
+/// A specialized result type for CLI commands, returning an `ExitCode` on success and an error of
+/// type `E` on failure.
+/// 
 pub type CliResult<E> = Result<ExitCode, E>;
 
 // ------------------------------------------------------------------------------------------------
@@ -112,85 +140,53 @@ static QUIET_COUNT: OnceLock<u8> = OnceLock::new();
 // Public Functions
 // ------------------------------------------------------------------------------------------------
 
+///
+/// Returns the number of times the verbose flag was included on the command line.
+/// 
 pub fn get_verbose_count() -> u8 {
     *VERBOSE_COUNT.get().unwrap_or(&0)
 }
 
+///
+/// Sets the number of times the verbose flag was included on the command line.
+/// 
 pub(crate) fn set_quiet_count(count: u8) -> bool {
     QUIET_COUNT.set(count).is_ok()
 }
 
+///
+/// Returns the number of times the quiet flag was included on the command line.
+/// 
 pub fn get_quiet_count() -> u8 {
     *QUIET_COUNT.get().unwrap_or(&0)
 }
 
+///
+/// Sets the number of times the quiet flag was included on the command line.
+/// 
 pub(crate) fn set_verbose_count(count: u8) -> bool {
     VERBOSE_COUNT.set(count).is_ok()
 }
 
+///
+/// Return the selected, or default, color choice.
+/// 
 pub fn get_color_choice() -> ColorChoice {
     colorchoice::ColorChoice::global()
 }
 
 ///
-/// TBD
+/// This function serves as the main entry point for a CLI application.
 /// 
-/// Note, the call to `C::execute` uses the macro `execute!` , and the error handling it provides.
-/// 
-/// # Example Single Command CLI
-/// 
-/// ```rust
-/// use clap::{Parser, ValueEnum};
-/// use clicmd::{Command, commands::Verbosity, error::CliError, cli_main};
-/// use colorchoice_clap::Color;
-/// use std::process::ExitCode;
-/// 
-/// #[derive(Debug, Parser)]
-/// #[command(version, about, long_about = None)] // Read from `Cargo.toml`
-/// pub struct Cli {
-///     #[command(flatten)]
-///     verbosity: Verbosity,
-/// 
-///     #[command(flatten)]
-///     color: Color,
-/// 
-///     message: Option<String>,
-/// }
-/// 
-/// impl Command for Cli {
-///     type Output = ExitCode;
-///     type Error = CliError;
-///
-///     fn execute(self) -> Result<Self::Output, Self::Error> {
-///         println!(
-///             "Message: {:?}", 
-///             self.message
-///                 .unwrap_or_else(|| "Hello world".into())
-///         );
-///         Ok(ExitCode::SUCCESS)
-///     }
-/// }
-/// 
-/// fn main() -> ExitCode {
-///     cli_main::<Cli>()
-/// }
-/// ``` 
-/// 
-/// See `examples/single/src/main.rs` for a complete example.
-/// 
-/// # Example Multi Command CLI
+/// This function should be called from the `main` function of your CLI application, using the
+/// generic argument to denote the implementation of your clap-based CLI command.
 /// 
 /// ```rust,ignore
-/// use clicmd::cli_main;
-/// use std::process::ExitCode;
-/// 
-/// fn main() -> ExitCode {
-///     cli_main::<Cli>()
+/// fn main() -> std::process::ExitCode {
+///     clicmd::cli_main::<MyApplicationCli>()
 /// }
 /// ```
-/// 
-/// See `examples/multi/src/main.rs` for a complete example.
-/// 
+///
 pub fn cli_main<C>() -> ExitCode
 where
     C: clap::Parser + Command<Output = ExitCode>,
@@ -201,6 +197,14 @@ where
 // ------------------------------------------------------------------------------------------------
 // Modules
 // ------------------------------------------------------------------------------------------------
+
+///
+/// Re-export most commonly used items from `clap`.
+/// This allows users to access commonly used `clap` items without directly depending on `clap`. 
+/// 
+pub mod clap {
+    pub use clap::{ArgAction, Args, CommandFactory, Parser, Subcommand, ValueEnum};
+}
 
 pub mod commands;
 

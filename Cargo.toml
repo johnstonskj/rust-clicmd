@@ -1,7 +1,7 @@
 [package]
 name = "clicmd"
 description = "This crate provides some composable components for command-line applications."
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 repository = "https://github.com/johnstonskj/clicmd"
 homepage = "https://simonkjohnston.life/clicmd"
@@ -43,3 +43,11 @@ thiserror = { version = "2.0", default-features = false }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 strum = { version = "0.28", features = ["derive"], optional = true }
+
+[[example]]
+name = "single"
+path = "examples/single/src/main.rs"
+
+[[example]]
+name = "multi"
+path = "examples/multi/src/main.rs"

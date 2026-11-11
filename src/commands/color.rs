@@ -8,10 +8,11 @@
 
 use crate::Command;
 use colorchoice::ColorChoice;
-use colorchoice_clap::Color;
-use std::convert::Infallible;
-use std::process::ExitCode;
+use std::{convert::Infallible, process::ExitCode};
 use tracing::trace;
+
+// re-export as this is our Command type.
+pub use colorchoice_clap::Color;
 
 // ------------------------------------------------------------------------------------------------
 // Public Functions
