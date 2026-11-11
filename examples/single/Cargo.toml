@@ -1,0 +1,9 @@
+[package]
+name = "single"
+description = "Single-command CLI example for the clicmd crate."
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+clicmd = { version = "0.1.1", path = "../../" }
