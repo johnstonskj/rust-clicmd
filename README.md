@@ -43,6 +43,10 @@ command-line options, are enabled.
 
 ## Example Single Command CLI
 
+Note that `clicmd` also re-exports some commonly used types and macros from
+`clap` to save the client having to take an addition *explicit* dependency.
+Obviously, if you wish to use `clap` directly, you still can.
+
 ```rust
 use clicmd::{
     Command,
@@ -86,6 +90,11 @@ fn main() -> ExitCode {
 ```
 
 ## Example Multiple Command CLI
+
+In this example the client only need to define the `Subcommand` enum and the
+associated command handlers, using the library's `CliWithSubCommands`
+abstraction to manage the subcommand dispatch. This also takes care of the
+verbosity and color initialization.
 
 ```rust
 use clicmd::{

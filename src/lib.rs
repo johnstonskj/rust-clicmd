@@ -9,6 +9,10 @@
 //! # Usage
 //!
 //! ## Example Single Command CLI
+//! 
+//! Note that `clicmd` also re-exports some commonly used types and macros from `clap` to save the
+//! client having to take an addition *explicit* dependency. Obviously, if you wish to use `clap`
+//! directly, you still can.
 //!
 #![doc = concat!(
     "```rust\n",
@@ -20,6 +24,10 @@
 //!
 //! ## Example Multi Command CLI
 //!
+//! In this example the client only need to define the `Subcommand` enum and the associated command
+//! handlers, using the library's `CliWithSubCommands` abstraction to manage the subcommand
+//! dispatch. This also takes care of the verbosity and color initialization.
+//! 
 #![doc = concat!(
     "```rust\n",
     include_str!("../examples/multi/main.rs"),
