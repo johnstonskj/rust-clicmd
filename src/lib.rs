@@ -15,7 +15,7 @@
 //! directly, you still can.
 //!
 #![doc = concat!(
-    "```rust\n",
+    "```rust,no_run\n",
     include_str!("../examples/single/main.rs"),
     "\n```"
 )]
@@ -29,7 +29,7 @@
 //! dispatch. This also takes care of the verbosity and color initialization.
 //!
 #![doc = concat!(
-    "```rust\n",
+    "```rust,no_run\n",
     include_str!("../examples/multi/main.rs"),
     "\n```"
 )]
@@ -41,7 +41,7 @@
 //! In this example the command has a sub-command that generates shell completions.
 //!
 #![doc = concat!(
-    "```rust\n",
+    "```rust,no_run\n",
     include_str!("../examples/completion/main.rs"),
     "\n```"
 )]
@@ -54,7 +54,7 @@
 //! by external subcommands.
 //!
 #![doc = concat!(
-    "```rust\n",
+    "```rust,no_run\n",
     include_str!("../examples/got/main.rs"),
     "\n```"
 )]

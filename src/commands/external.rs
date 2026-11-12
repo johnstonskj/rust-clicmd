@@ -91,10 +91,16 @@ macro_rules! external_command {
 ///
 /// ```rust
 /// # use clap::Subcommand;
-/// # use clicmd::commands::external::ExternalSubCommand;
+/// # use clicmd::{
+/// #     CommandOnce, 
+/// #     CommandOnceWith, 
+/// #     error::CliError, 
+/// #     commands::{CliWithSubCommands, external::ExternalSubCommand},
+/// # };
+/// # use std::process::ExitCode;
 /// #[derive(Debug, Subcommand)]
 /// #[command(allow_external_subcommands = true)]
-/// pub enum Commands {
+/// pub enum MyCommands {
 ///     // ...
 ///
 ///     #[command(external_subcommand)]

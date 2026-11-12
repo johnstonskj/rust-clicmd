@@ -35,6 +35,7 @@ use tracing::{info, trace};
 /// #     commands::{CliWithSubCommands, completion::CompletionSubCommand},
 /// #     error::CliError,
 /// # };
+/// # use std::process::ExitCode;
 /// #[derive(Debug, Subcommand)]
 /// pub enum MyCommands {
 ///     // ...
