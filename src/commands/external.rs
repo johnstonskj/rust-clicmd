@@ -1,100 +1,202 @@
 //!
 //! Provides the external subcommand functionality for CLI commands.
 //!
-//! This module wraps the `clap` external subcommand functionality to integrate with the `Command`
-//! trait. It provides a default implementation for handling external subcommands which will also
-//! pass on the same verbosity and color flags to the sub-command.
+//! This module wraps the `clap` external subcommand functionality to integrate with the
+//! [`CommandOnce`] trait. It provides a default implementation for handling external subcommands
+//! which will also pass on the same verbosity and color flags to the sub-command.
 //!
-//! Note that `ExternalSubCommand` implements both the `Command` and `CommandWith` traits, allowing
-//! it to be executed directly or with a specified prefix. The intent of the prefix is to support
-//! the convention where sub-command binary names are composed of the primary command name followed
-//! by a hyphen and the sub-command name.
+//! Note that [ExternalSubCommand] implements both the [CommandOnce] and [CommandOnceWith] traits,
+//! allowing it to be executed directly or with a specified prefix. The intent of the prefix is to
+//! support the convention where sub-command binary names are composed of the primary command name
+//! followed by a hyphen and the sub-command name.
 //!
 //! # Examples
+//! 
+//! In this case the external subcommand `ls` will be executed with the `--color` argument.
 //!
 //! ```rust
-//! use clicmd::{Command, commands::external::ExternalSubCommand};
+//! use clicmd::{CommandOnce, commands::external::ExternalSubCommand};
 //!
-//! let cmd = ExternalSubCommand {
-//!     args: vec!["ls".into()],
-//! };
-//! cmd.execute().unwrap();
+//! let cmd = ExternalSubCommand::from(
+//!     vec!["ls".into(), "--color".into()]
+//! ).execute_once().unwrap();
+//! ```
+//!
+//! In this case the external subcommand `my-ls` will be executed with the `--color` argument.
+//! 
+//! ```rust
+//! use clicmd::{CommandOnceWith, commands::external::ExternalSubCommand};
+//!
+//! ExternalSubCommand::from(
+//!     vec!["ls".into(), "--color".into()]
+//! ).execute_once_with("my".into()).unwrap();
 //! ```
 //!
 
 use crate::{
-    Command, CommandWith,
+    CommandOnce, CommandOnceWith,
     error::CliError,
     get_color_choice, get_quiet_count, get_verbose_count,
     messages::{Message, Note},
 };
-use clap::Args;
 use colorchoice::ColorChoice;
 use search_path::SearchPath;
 use std::{
-    path::{Path, PathBuf},
+    ffi::OsStr,
+    path::PathBuf,
     process::{Command as OsCommand, ExitCode},
 };
 use tracing::{error, info};
+
+// ------------------------------------------------------------------------------------------------
+// Public Macros
+// ------------------------------------------------------------------------------------------------
+
+#[macro_export]
+macro_rules! external_command {
+    () => {
+        #[command(external_subcommand)]
+        External (
+            #[arg(num_args = 1..)]
+            Vec<String>,
+        ),
+   };
+}
 
 // ------------------------------------------------------------------------------------------------
 // Public Types
 // ------------------------------------------------------------------------------------------------
 
 ///
-/// External sub-command handling for commands not natively supported by the CLI.
+/// A Command-Line mixin that provides external subcommand functionality.
 ///
 /// The array of values **must** contain at least one element, representing the external sub-command
 /// executable name to run, all other values are arguments to that executable.
 ///
 /// # Example
+/// 
+/// There are a couple of important points to note when using external subcommands:
+/// 
+/// 1. The command itself has to be present in the format shown, with the `external_subcommand`
+///    attribute and with *only* the string vector.
+/// 2. The first element in the array represents the external sub-command executable name, hence
+///    the `num_args` constraint, and subsequent elements are treated as arguments to that
+///    executable.
+/// 3. The `ExternalSubCommand` struct is used to wrap the arguments and execute the external 
+///    command, and is easily constructed using the `From` trait with the vector of strings from 
+///    above.
+/// 4. This command implements both `execute_once` and `execute_once_with`, the difference being
+///    that the latter form takes a string that will be a prefix used to construct the executable
+///    name.
 ///
 /// ```rust
-/// use clap::Subcommand;
-/// use clicmd::commands::external::ExternalSubCommand;
-///
+/// # use clap::Subcommand;
+/// # use clicmd::commands::external::ExternalSubCommand;
 /// #[derive(Debug, Subcommand)]
 /// #[command(allow_external_subcommands = true)]
 /// pub enum Commands {
 ///     // ...
 ///
-///     External(
-///         ExternalSubCommand
-///     ),
+///     #[command(external_subcommand)]
+///     External(#[arg(num_args = 1..)] Vec<String>),
+/// }
+/// 
+/// type Cli = CliWithSubCommands<MyCommands>;
+/// 
+/// impl CommandOnce for MyCommands {
+///     type Output = ExitCode;
+///     type Error = CliError;
+/// 
+///     fn execute_once(self) -> Result<Self::Output, Self::Error> {
+///         match self {
+///             // ...
+///             MyCommands::External(args) => {
+///                 ExternalSubCommand::from(args) 
+///                     .execute_once_with("got".into())?;
+///             }
+///         }
+///         Ok(ExitCode::SUCCESS)
+///     }
 /// }
 /// ```
+/// 
+/// See the code in `examples/got/main.rs` for a complete working example.
 ///
-#[derive(Debug, Args)]
+/// Alternatively, to save hard coding the prefix string, you can dynamically obtain the command
+/// name from the CLI command factory.
+/// 
+/// ```rust,ignore
+/// let command = <Cli as CommandFactory>::command();
+/// let name = command.get_name();
+/// ExternalSubCommand::from(args).execute_once_with(name.into())?;
+/// ```
+///
+/// Or, you can use the crate name as the prefix.
+/// 
+/// ```rust,ignore
+/// const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
+/// ExternalSubCommand::from(args).execute_once_with(CRATE_NAME.into())?;
+/// ```
+/// 
+#[derive(Debug)]
 pub struct ExternalSubCommand {
-    #[arg(num_args = 1..)]
-    pub args: Vec<String>,
+    args: Vec<String>,
 }
 
 // ------------------------------------------------------------------------------------------------
 // Implementations
 // ------------------------------------------------------------------------------------------------
 
-impl Command for ExternalSubCommand {
+impl From<Vec<String>> for ExternalSubCommand {
+    fn from(args: Vec<String>) -> Self {
+        Self { args }
+    }
+}
+
+impl CommandOnce for ExternalSubCommand {
     type Output = ExitCode;
     type Error = CliError;
 
-    fn execute(self) -> Result<ExitCode, CliError> {
+    fn execute_once(self) -> Result<ExitCode, CliError> {
         self.execute_inner(None)
     }
 }
 
-impl CommandWith for ExternalSubCommand {
+impl CommandOnceWith for ExternalSubCommand {
     type Output = ExitCode;
     type Error = CliError;
     type Value = String;
 
-    fn execute_with(self, prefix_name: String) -> Result<ExitCode, CliError> {
-        self.execute_inner(Some(prefix_name))
+    fn execute_once_with(self, prefix_name: String) -> Result<ExitCode, CliError> {
+        self.execute_inner(Some(&prefix_name))
     }
 }
 
 impl ExternalSubCommand {
-    fn execute_inner(self, prefix_name: Option<String>) -> Result<ExitCode, CliError> {
+    fn execute_inner(self, prefix_name: Option<&String>) -> Result<ExitCode, CliError> {
+        match self.to_process_command(prefix_name) {
+            Ok(mut command) => match command.status() {
+                Ok(status) => {
+                    info!("sub-process returned status {status}");
+                    Ok(if status.success() {
+                        ExitCode::SUCCESS
+                    } else {
+                        ExitCode::FAILURE
+                    })
+                }
+                Err(e) => {
+                    error!("sub-process execution failed with error {e}");
+                    sub_process_error(&command.get_program(), e).print();
+                    Ok(ExitCode::FAILURE)
+                }
+            },
+            Err(_) => Ok(ExitCode::FAILURE),
+        }
+    }
+}
+
+impl ExternalSubCommand {
+    pub fn to_process_command(&self, prefix_name: Option<&String>) -> Result<OsCommand, CliError> {
         let command_name = if let Some(prefix) = prefix_name {
             format!("{prefix}-{}", self.args[0])
         } else {
@@ -134,27 +236,14 @@ impl ExternalSubCommand {
                 exec_path, arguments
             );
 
-            match OsCommand::new(exec_path.clone())
-                .args(arguments.as_slice())
-                .status()
-            {
-                Ok(status) => {
-                    info!("sub-process {:?} returned status {status}", &exec_path);
-                    Ok(if status.success() {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::FAILURE
-                    })
-                }
-                Err(e) => {
-                    error!("sub-process {exec_path:?} returned error {e}");
-                    sub_process_error(exec_path, e).print();
-                    Ok(ExitCode::FAILURE)
-                }
-            }
+            let mut command = OsCommand::new(exec_path.clone());
+            command.args(arguments.as_slice());
+            Ok(command)
         } else {
-            missing_executable(command_name).print();
-            Ok(ExitCode::FAILURE)
+            missing_executable(&command_name).print();
+            Err(CliError::SubProcessExecutableMissing(PathBuf::from(
+                command_name,
+            )))
         }
     }
 }
@@ -163,17 +252,17 @@ impl ExternalSubCommand {
 // Private Functions
 // ------------------------------------------------------------------------------------------------
 
-fn missing_executable<S: AsRef<str>>(name: S) -> Message {
+fn missing_executable(name: &str) -> Message {
     Message::error("no executable found for external command")
-        .with_context(format!("Command `{}`", name.as_ref()))
+        .with_context(format!("exectable name: `{}`", name))
         .with_note(Note::help(format!(
-            "check that the executable `rfham-{}` exists and is in $PATH",
-            name.as_ref()
+            "check that the executable `{}` exists and is in $PATH",
+            name
         )))
 }
 
-fn sub_process_error<P: AsRef<Path>, E: std::error::Error>(path: P, error: E) -> Message {
+fn sub_process_error<E: std::error::Error>(path: &OsStr, error: E) -> Message {
     Message::error("an error occured trying to run a sub-process")
-        .with_context(format!("Executable path `{:?}`", path.as_ref()))
+        .with_context(format!("Executable path `{:?}`", path))
         .with_note(Note::note(format!("reported error: {error}")))
 }

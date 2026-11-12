@@ -1,8 +1,8 @@
 use clicmd::{
-    Command,
+    CommandOnce,
     clap::Parser,
     cli_main,
-    commands::{Verbosity, color::Color},
+    commands::{color::Color, verbosity::Verbosity},
     error::CliError,
 };
 use std::process::ExitCode;
@@ -19,14 +19,14 @@ pub struct Cli {
     message: Option<String>,
 }
 
-impl Command for Cli {
+impl CommandOnce for Cli {
     type Output = ExitCode;
     type Error = CliError;
 
-    fn execute(self) -> Result<Self::Output, Self::Error> {
-        self.verbosity.execute()?;
-        self.color.execute();
-         println!(
+    fn execute_once(self) -> Result<Self::Output, Self::Error> {
+        self.verbosity.execute_once()?;
+        self.color.execute_once();
+        println!(
             "Message: {:?}",
             self.message.unwrap_or_else(|| "Hello world".into())
         );

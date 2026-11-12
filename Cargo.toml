@@ -1,7 +1,7 @@
 [package]
 name = "clicmd"
 description = "This crate provides some composable components for command-line applications."
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 repository = "https://github.com/johnstonskj/clicmd"
 homepage = "https://simonkjohnston.life/clicmd"
@@ -35,9 +35,9 @@ clap-verbosity-flag = { version = "3", default-features = false, features = [
     "tracing",
 ] }
 colorchoice = { version = "1.0" }
-colorchoice-clap = { version = "1.0" }
 colored = { version = "3.1" }
 document-features = "0.2"
+particle-traits = "0.1"
 search_path = "0.1"
 thiserror = { version = "2.0", default-features = false }
 tracing = "0.1"

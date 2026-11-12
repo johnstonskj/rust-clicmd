@@ -41,7 +41,7 @@ command-line options, are enabled.
 
 ## Examples
 
-## Example Single Command CLI
+### Example Single Command CLI
 
 Note that `clicmd` also re-exports some commonly used types and macros from
 `clap` to save the client having to take an addition *explicit* dependency.
@@ -89,7 +89,7 @@ fn main() -> ExitCode {
 }
 ```
 
-## Example Multiple Command CLI
+### Example Multiple Command CLI
 
 In this example the client only need to define the `Subcommand` enum and the
 associated command handlers, using the library's `CliWithSubCommands`
@@ -133,6 +133,117 @@ impl Command for GreetingCommands {
             }
             GreetingCommands::Goodbye { message } => {
                 println!("Goodbye: {}", message);
+            }
+        }
+        Ok(ExitCode::SUCCESS)
+    }
+}
+
+fn main() -> ExitCode {
+    cli_main::<Cli>()
+}
+```
+
+### Example With Completion Generation
+
+```rust
+use clicmd::{
+    CommandOnce, CommandOnceWith,
+    clap::{CommandFactory, Subcommand},
+    cli_main,
+    commands::{CliWithSubCommands, completion::CompletionSubCommand},
+    error::CliError,
+};
+use std::process::ExitCode;
+
+#[derive(Debug, Subcommand)]
+pub enum MyCommands {
+    /// Add a file to the staging area
+    Add {
+        /// The file to add
+        file: String,
+    },
+    /// Commit changes to the repository
+    Commit {
+        /// The message to include with the commit
+        message: String,
+    },
+
+    Completions(CompletionSubCommand),
+}
+
+type Cli = CliWithSubCommands<MyCommands>;
+
+impl CommandOnce for MyCommands {
+    type Output = ExitCode;
+    type Error = CliError;
+
+    fn execute_once(self) -> Result<Self::Output, Self::Error> {
+        match self {
+            MyCommands::Add { file } => {
+                println!("Add: {}", file);
+            }
+            MyCommands::Commit { message } => {
+                println!("Commit: {}", message);
+            }
+            MyCommands::Completions(cmd) => {
+                cmd.execute_once_with(<Cli as CommandFactory>::command());
+            }
+        }
+        Ok(ExitCode::SUCCESS)
+    }
+}
+
+fn main() -> ExitCode {
+    cli_main::<Cli>()
+}
+```
+
+### Example With External Commands
+
+```rust
+use clicmd::{
+    CommandOnce, CommandOnceWith,
+    clap::Subcommand,
+    cli_main,
+    commands::{CliWithSubCommands, external::ExternalSubCommand},
+    error::CliError,
+};
+use std::process::ExitCode;
+
+#[derive(Debug, Subcommand)]
+pub enum MyCommands {
+    /// Add a file to the staging area
+    Add {
+        /// The file to add
+        file: String,
+    },
+    /// Commit changes to the repository
+    Commit {
+        /// The message to include with the commit
+        message: String,
+    },
+
+    #[command(external_subcommand)]
+    External(#[arg(num_args = 1..)] Vec<String>),
+}
+
+type Cli = CliWithSubCommands<MyCommands>;
+
+impl CommandOnce for MyCommands {
+    type Output = ExitCode;
+    type Error = CliError;
+
+    fn execute_once(self) -> Result<Self::Output, Self::Error> {
+        match self {
+            MyCommands::Add { file } => {
+                println!("Add: {}", file);
+            }
+            MyCommands::Commit { message } => {
+                println!("Commit: {}", message);
+            }
+            MyCommands::External(args) => {
+                ExternalSubCommand::from(args).execute_once_with(&"got".into())?;
             }
         }
         Ok(ExitCode::SUCCESS)

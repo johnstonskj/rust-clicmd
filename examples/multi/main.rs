@@ -1,9 +1,5 @@
 use clicmd::{
-    Command,
-    clap::{Subcommand},
-    cli_main,
-    commands::CliWithSubCommands,
-    error::CliError,
+    CommandOnce, clap::Subcommand, cli_main, commands::CliWithSubCommands, error::CliError,
 };
 use std::process::ExitCode;
 
@@ -23,12 +19,12 @@ pub enum GreetingCommands {
 
 type Cli = CliWithSubCommands<GreetingCommands>;
 
-impl Command for GreetingCommands {
+impl CommandOnce for GreetingCommands {
     type Output = ExitCode;
     type Error = CliError;
 
-    fn execute(self) -> Result<Self::Output, Self::Error> {
-       match self {
+    fn execute_once(self) -> Result<Self::Output, Self::Error> {
+        match self {
             GreetingCommands::Hello { message } => {
                 println!("Hello: {}", message);
             }

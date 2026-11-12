@@ -11,14 +11,14 @@
 //!
 //!
 
-use crate::Command;
 use crate::{
-    error::CliError, get_quiet_count, get_verbose_count, set_quiet_count, set_verbose_count,
+    CommandOnce,
+    clap::{Parser, Subcommand},
+    commands::{color::Color, verbosity::Verbosity},
+    error::CliError,
 };
-use ::tracing::trace;
-use clap::{ArgAction, Args, Parser, Subcommand};
-use colorchoice_clap::Color;
 use std::{fmt::Debug, process::ExitCode};
+use tracing::trace;
 use tracing_subscriber::filter::LevelFilter;
 
 // ------------------------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ use tracing_subscriber::filter::LevelFilter;
 #[command(version, about, long_about = None)] // Read from `Cargo.toml`
 pub struct CliWithSubCommands<S>
 where
-    S: Debug + Subcommand + Command<Output = ExitCode, Error = CliError> + Debug,
+    S: Debug + Subcommand + CommandOnce<Output = ExitCode, Error = CliError>,
 {
     #[command(flatten)]
     #[cfg(feature = "verbosity")]
@@ -43,59 +43,36 @@ where
     command: S,
 }
 
-#[derive(Debug, Args)]
-pub struct Verbosity {
-    #[doc = "Increase logging verbosity by one level per occurance."]
-    #[arg(
-        long,
-        short = 'v',
-        action = ArgAction::Count,
-        global = true,
-    )]
-    #[cfg(feature = "verbosity")]
-    verbose: u8,
-
-    #[doc = "Decrease logging verbosity by one level per occurance."]
-    #[arg(
-        long,
-        short = 'q',
-        action = ArgAction::Count,
-        global = true,
-        conflicts_with = "verbose",
-    )]
-    #[cfg(feature = "verbosity")]
-    quiet: u8,
-}
-
 // ------------------------------------------------------------------------------------------------
 // Implementations ❯ CliWithSubCommands
 // ------------------------------------------------------------------------------------------------
 
-impl<S> Command for CliWithSubCommands<S>
+impl<S> CommandOnce for CliWithSubCommands<S>
 where
-    S: Debug + Subcommand + Command<Output = ExitCode, Error = CliError>,
+    S: Debug + Subcommand + CommandOnce<Output = ExitCode, Error = CliError>,
 {
     type Output = ExitCode;
     type Error = CliError;
 
-    fn execute(self) -> Result<Self::Output, Self::Error> {
+    fn execute_once(self) -> Result<Self::Output, Self::Error> {
         trace!(
             "CliWithSubCommands::execute(verbosity: {:?}, color: {:?})",
             self.verbosity, self.color
         );
-        self.verbosity.execute()?;
-        self.color.execute();
-        self.command.execute()
+        self.verbosity.execute_once()?;
+        self.color.execute_once();
+        self.command.execute_once()
     }
 }
 
 impl<S> CliWithSubCommands<S>
 where
-    S: Debug + Subcommand + Command<Output = ExitCode, Error = CliError> + Debug,
+    S: Debug + Subcommand + CommandOnce<Output = ExitCode, Error = CliError>,
 {
     ///
     /// Return the `Verbosity` structure set by the command-line.
     ///
+    #[inline(always)]
     pub fn verbosity(&self) -> &Verbosity {
         &self.verbosity
     }
@@ -103,20 +80,23 @@ where
     ///
     /// Return the number of times the verbose flag was set.
     ///
+    #[inline(always)]
     pub fn verbose_count(&self) -> u8 {
-        self.verbosity.verbose
+        self.verbosity.verbose_count()
     }
 
     ///
     /// Return the number of times the quiet flag was set.
     ///
+    #[inline(always)]
     pub fn quiet_count(&self) -> u8 {
-        self.verbosity.quiet
+        self.verbosity.quiet_count()
     }
 
     ///
     /// Return the tracing *maximum* filter value based on the verbosity and quiet flags.
     ///
+    #[inline(always)]
     pub fn to_tracing_filter(&self) -> LevelFilter {
         self.verbosity.to_tracing_filter()
     }
@@ -124,65 +104,14 @@ where
     ///
     /// Return the `Color` structure set by the command-line.
     ///
+    #[inline(always)]
     pub fn color(&self) -> &Color {
         &self.color
     }
 
+    #[inline(always)]
     pub fn command(&self) -> &S {
         &self.command
-    }
-}
-
-// ------------------------------------------------------------------------------------------------
-// Implementations ❯ Verbosity
-// ------------------------------------------------------------------------------------------------
-
-impl Command for Verbosity {
-    type Output = ExitCode;
-    type Error = CliError;
-
-    fn execute(self) -> Result<Self::Output, Self::Error> {
-        if !set_verbose_count(self.verbose) {
-            Err(CliError::InitGlobalFailed("verbose-count"))
-        } else if !set_quiet_count(self.quiet) {
-            Err(CliError::InitGlobalFailed("quiet-count"))
-        } else {
-            self.to_tracing_filter().execute()?;
-            Ok(ExitCode::SUCCESS)
-        }
-    }
-}
-
-impl Verbosity {
-    ///
-    /// Return the tracing *maximum* filter value based on the verbosity and quiet flags.
-    ///
-    /// This function provides a bride between the command-line options and the tracing system
-    /// allowing as `LevelFilter` also implements `Command`.
-    ///
-    /// # Example
-    ///
-    /// ```rust,ignore
-    /// fn main() {
-    ///     let command_line = Cli::parse();
-    ///
-    ///     execute! (
-    ///         command_line.verbosity.to_tracing_filter(),
-    ///         command_line
-    ///     );
-    /// }
-    /// ```
-    pub fn to_tracing_filter(&self) -> LevelFilter {
-        const DEFAULT_LEVEL_ERROR: u8 = 1;
-        let offset = get_verbose_count() as i16 - get_quiet_count() as i16;
-        match i16::from(DEFAULT_LEVEL_ERROR).saturating_add(offset) {
-            i16::MIN..=0 => LevelFilter::OFF,
-            1 => LevelFilter::ERROR,
-            2 => LevelFilter::WARN,
-            3 => LevelFilter::INFO,
-            4 => LevelFilter::DEBUG,
-            5..=i16::MAX => LevelFilter::TRACE,
-        }
     }
 }
 
@@ -198,4 +127,4 @@ pub mod completion;
 #[cfg(feature = "external")]
 pub mod external;
 
-pub mod tracing;
+pub mod verbosity;

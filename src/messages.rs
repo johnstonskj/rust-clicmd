@@ -7,7 +7,7 @@
 //!
 
 use colored::Colorize;
-use std::{error::Error, fmt::Display};
+use core::{error::Error, fmt::Display};
 use strum::{Display as EnumDisplay, EnumIs, EnumIter, EnumString};
 use tracing::{error, info, warn};
 

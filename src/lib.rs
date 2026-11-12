@@ -9,7 +9,7 @@
 //! # Usage
 //!
 //! ## Example Single Command CLI
-//! 
+//!
 //! Note that `clicmd` also re-exports some commonly used types and macros from `clap` to save the
 //! client having to take an addition *explicit* dependency. Obviously, if you wish to use `clap`
 //! directly, you still can.
@@ -27,7 +27,7 @@
 //! In this example the client only need to define the `Subcommand` enum and the associated command
 //! handlers, using the library's `CliWithSubCommands` abstraction to manage the subcommand
 //! dispatch. This also takes care of the verbosity and color initialization.
-//! 
+//!
 #![doc = concat!(
     "```rust\n",
     include_str!("../examples/multi/main.rs"),
@@ -36,7 +36,35 @@
 //!
 //! See `examples/multi/main.rs` for this complete example.
 //!
+//! ## Example CLI With Completions
+//!
+//! In this example the command has a sub-command that generates shell completions.
+//!
+#![doc = concat!(
+    "```rust\n",
+    include_str!("../examples/completion/main.rs"),
+    "\n```"
+)]
+//!
+//! See `examples/completion/main.rs` for this complete example.
+//!
+//! ## Example External Subcommand CLI
+//!
+//! In this example the command is a multi-command CLI but has an *escape hatch* to allow extension
+//! by external subcommands.
+//!
+#![doc = concat!(
+    "```rust\n",
+    include_str!("../examples/got/main.rs"),
+    "\n```"
+)]
+//!
+//! See `examples/got/main.rs` for this complete example.
+//!
 //! # Notes
+//!
+//! The types [`CommandOnce`] and [`CommandOnceWith`] are re-exported from the `particle-traits`
+//! crate.
 //!
 //! You will notice that some features such as `color` are optional and yet some aspects of the
 //! associated components are still usable and composable within the application. This allows the
@@ -47,7 +75,7 @@
 #![doc = document_features::document_features!()]
 
 use colorchoice::ColorChoice;
-use std::{error::Error, process::ExitCode, sync::OnceLock};
+use std::{process::ExitCode, sync::OnceLock};
 
 // ------------------------------------------------------------------------------------------------
 // Public Macros
@@ -75,7 +103,7 @@ use std::{error::Error, process::ExitCode, sync::OnceLock};
 #[macro_export]
 macro_rules! execute {
     ($cmd:expr) => {
-        match $cmd.execute() {
+        match $cmd.execute_once() {
             Ok(response) => response,
             Err(e) => {
                 $crate::messages::Message::from_error(e, "", "", None).print();
@@ -84,7 +112,7 @@ macro_rules! execute {
         }
     };
     ($cmd:ident ( $arg:expr ) ) => {
-        match $cmd.execute_with($arg) {
+        match $cmd.execute_once_with($arg) {
             Ok(response) => response,
             Err(e) => {
                 $crate::messages::Message::from_error(e, "", "", None).print();
@@ -106,36 +134,12 @@ macro_rules! execute {
 // ------------------------------------------------------------------------------------------------
 
 ///
-/// A trait representing a command that can be executed once only, without additional arguments.
-/// 
-pub trait Command {
-    /// The type returned on successful execution.
-    type Output;
-    /// The error type returned on failure.
-    type Error: Error;
-
-    /// Executes the command, consuming self.
-    fn execute(self) -> Result<Self::Output, Self::Error>;
-}
-
-///
-/// A trait representing a command that can be executed once only, with a single argument.
-/// 
-pub trait CommandWith {
-    /// The type returned on successful execution.
-    type Output;
-    /// The error type returned on failure.
-    type Error: Error;
-    type Value: ?Sized;
-
-    fn execute_with(self, value: Self::Value) -> Result<Self::Output, Self::Error>;
-}
-
-///
 /// A specialized result type for CLI commands, returning an `ExitCode` on success and an error of
 /// type `E` on failure.
-/// 
+///
 pub type CliResult<E> = Result<ExitCode, E>;
+
+pub use particle_traits::commands::{CommandOnce, CommandOnceWith};
 
 // ------------------------------------------------------------------------------------------------
 // Private Globals
@@ -150,45 +154,45 @@ static QUIET_COUNT: OnceLock<u8> = OnceLock::new();
 
 ///
 /// Returns the number of times the verbose flag was included on the command line.
-/// 
+///
 pub fn get_verbose_count() -> u8 {
     *VERBOSE_COUNT.get().unwrap_or(&0)
 }
 
 ///
 /// Sets the number of times the verbose flag was included on the command line.
-/// 
+///
 pub(crate) fn set_quiet_count(count: u8) -> bool {
     QUIET_COUNT.set(count).is_ok()
 }
 
 ///
 /// Returns the number of times the quiet flag was included on the command line.
-/// 
+///
 pub fn get_quiet_count() -> u8 {
     *QUIET_COUNT.get().unwrap_or(&0)
 }
 
 ///
 /// Sets the number of times the quiet flag was included on the command line.
-/// 
+///
 pub(crate) fn set_verbose_count(count: u8) -> bool {
     VERBOSE_COUNT.set(count).is_ok()
 }
 
 ///
 /// Return the selected, or default, color choice.
-/// 
+///
 pub fn get_color_choice() -> ColorChoice {
     colorchoice::ColorChoice::global()
 }
 
 ///
 /// This function serves as the main entry point for a CLI application.
-/// 
+///
 /// This function should be called from the `main` function of your CLI application, using the
 /// generic argument to denote the implementation of your clap-based CLI command.
-/// 
+///
 /// ```rust,ignore
 /// fn main() -> std::process::ExitCode {
 ///     clicmd::cli_main::<MyApplicationCli>()
@@ -197,7 +201,7 @@ pub fn get_color_choice() -> ColorChoice {
 ///
 pub fn cli_main<C>() -> ExitCode
 where
-    C: clap::Parser + Command<Output = ExitCode>,
+    C: clap::Parser + CommandOnce<Output = ExitCode>,
 {
     execute!(C::parse())
 }
@@ -208,10 +212,12 @@ where
 
 ///
 /// Re-export most commonly used items from `clap`.
-/// This allows users to access commonly used `clap` items without directly depending on `clap`. 
-/// 
+/// This allows users to access commonly used `clap` items without directly depending on `clap`.
+///
 pub mod clap {
-    pub use clap::{ArgAction, Args, CommandFactory, Parser, Subcommand, ValueEnum};
+    pub use clap::{
+        ArgAction, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand, ValueEnum,
+    };
 }
 
 pub mod commands;
